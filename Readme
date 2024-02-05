@@ -1,0 +1,3 @@
+An actor package in Go. Use it for scalable message passing in a process.
+Actors are created with an ID and in return you will get a receive only channel to get messages.
+Send a message to an actor by passing the ID.
