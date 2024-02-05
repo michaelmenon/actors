@@ -5,17 +5,23 @@ Send a message to an actor by passing the ID of the actor to which you want to s
 
 usage: go get github.com/michaelmenon/actors
 
-actor, err := actors.AddActor("actorID")
+actor1, err := actors.AddActor("actorID1")
+
+//create another actor
+actor2, err := actors.AddActor("actorID2")
 
 //listen for messages 
-for msg := <-actor.Get(){
+for msg := <-actor1.Get(){
     fmt.Println(msg)
 }
-//to remove an actor
-actor.Close()
+//in a seperate Goroutine send a message from actor1 to actor2
+actor1.SendMessage("actorID2", []byte("my message"))
 
-//in a seperate Goroutine send a message
-actor.SendMessage("actorID", []byte("my message"))
+//to remove an actor
+actor1.Close()
+actor2.Close()
+
+
 
 for testing the load function run :
 go test -v -run TestSendMessage
