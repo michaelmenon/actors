@@ -1,3 +1,17 @@
 An actor package in Go. Use it for scalable message passing in a process.
 Actors are created with an ID and in return you will get a receive only channel to get messages.
 Send a message to an actor by passing the ID.
+
+usage go get github.com/michaelmenon/actors
+
+actor, err := actors.AddActor("actorID")
+
+//listen for messages 
+for msg := <-actor{
+    fmt.Println(msg)
+}
+//to remove an actor
+actors.RemoveActor("actorID")
+
+//in a seperate Goroutine send a message
+actors.SendMessage("actorID", []byte("my message"))
