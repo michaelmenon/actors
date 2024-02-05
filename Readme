@@ -15,3 +15,13 @@ actor.Close()
 
 //in a seperate Goroutine send a message
 actor.SendMessage("actorID", []byte("my message"))
+
+for testing the load function run :
+go test -v -run TestSendMessage
+
+On my 32 GB MAC i was able to receive 1 million messages in 5.3 seconds
+Future TODO involves:
+
+1) CLOSE signal from one actor to another actor.
+2) Multiple actors on a single tag with multiple actor IDs so that you can broad cast messages to all actors under a tag.
+3) Actor cluster and have actors send messages to each other over the network.

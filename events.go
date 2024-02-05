@@ -14,5 +14,5 @@ type Event struct {
 	eventType EVENTTYPE
 	iD        string //actor id to which the event is targeted
 	data      []byte
-	actor     Actor //actor if needs to be added
+	actor     *Actor //actor if needs to be added
 }

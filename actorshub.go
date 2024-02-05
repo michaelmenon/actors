@@ -70,7 +70,7 @@ func (ah *ActorHub) run() {
 // registerActor
 // if an actor already exists in the hub the regitered actors referance is returned
 // / else a new actor is registered under that id
-func (ah *ActorHub) registerActor(actor Actor) error {
+func (ah *ActorHub) registerActor(actor *Actor) error {
 	if ah.store == nil {
 		return ActorError{err: NILSTOREERROR}
 	}
@@ -78,7 +78,7 @@ func (ah *ActorHub) registerActor(actor Actor) error {
 		//an actor already exist
 		return nil
 	} else {
-		ah.store[actor.id] = &actor
+		ah.store[actor.id] = actor
 	}
 	return nil
 }
@@ -92,10 +92,14 @@ func (ah *ActorHub) removeActor(id string) error {
 	//get the actor
 	if actor, ok := ah.store[id]; ok {
 
-		//close the actor channel
-		close(actor.recvCh)
-		//remove the actor from the stor
-		delete(ah.store, id)
+		if actor != nil {
+			//close the actor channel
+			close(actor.recvCh)
+			//remove the actor from the stor
+			delete(ah.store, id)
+
+		}
+
 	}
 	return nil
 }
@@ -109,6 +113,7 @@ func (ah *ActorHub) sendMessage(to string, message []byte) error {
 	if actor, ok := ah.store[to]; ok {
 
 		if actor != nil && actor.recvCh != nil {
+
 			actor.recvCh <- string(message)
 		}
 

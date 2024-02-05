@@ -12,14 +12,14 @@ func NewActor(id string) (*Actor, error) {
 	if err != nil {
 		return nil, err
 	}
-	actorChan := make(chan string, 10)
+	actorChan := make(chan string, 1000)
 
 	actor := Actor{
 		id:     id,
 		recvCh: actorChan,
 	}
 	if ah.eventChan != nil {
-		ah.eventChan <- Event{iD: id, eventType: ADDACTOR, actor: actor}
+		ah.eventChan <- Event{iD: id, eventType: ADDACTOR, actor: &actor}
 	}
 	return &actor, nil
 }
@@ -35,7 +35,11 @@ func (a *Actor) Close() error {
 	if err != nil {
 		return err
 	}
-	ah.removeActor(a.id)
+	if ah.eventChan != nil {
+
+		ah.eventChan <- Event{iD: a.id, eventType: REMOVEACTOR}
+	}
+
 	return nil
 }
 
