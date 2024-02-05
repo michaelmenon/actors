@@ -24,9 +24,9 @@ func NewActor(id string) (*Actor, error) {
 	return &actor, nil
 }
 
-// RemoveActor ... remove an actor from the system
-// remove actor can only be called from an actor instance
-func (a *Actor) RemoveActor() error {
+// Close ... remove an actor from the system
+// Close actor can only be called from an actor instance
+func (a *Actor) Close() error {
 
 	if a == nil {
 		return ActorError{err: ACTORHUBGENERROR}
@@ -40,7 +40,7 @@ func (a *Actor) RemoveActor() error {
 }
 
 // GetReciver ... returns the receiver associated with this actor
-func (a *Actor) GetReciver() <-chan string {
+func (a *Actor) Get() <-chan string {
 	return a.recvCh
 }
 
