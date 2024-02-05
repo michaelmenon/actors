@@ -1,6 +1,7 @@
 An actor package in Go. Use it for scalable message passing in a process.
-Actors are created with an ID and in return you will get a receive only channel to get messages.
-Send a message to an actor by passing the ID.
+Actors are created with an ID and in return you will get an actor instance and you can call messages on this instance to send and receive messages over it.
+
+Send a message to an actor by passing the ID of the actor to which you want to send the message.
 
 usage: go get github.com/michaelmenon/actors
 
