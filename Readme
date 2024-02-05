@@ -26,7 +26,7 @@ actor2.Close()
 for testing the load function run :
 go test -v -run TestSendMessage
 
-On my 32 GB MAC i was able to receive 1 million messages in 5.3 seconds
+On my 32 GB MAC i was able to receive 1 million messages with 1 million actors in 5.54 seconds
 Future TODO involves:
 
 1) CLOSE signal from one actor to another actor.
