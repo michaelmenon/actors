@@ -6,15 +6,9 @@ import (
 )
 
 /*
-Defines the actors and its functions
+Defines the actors Hub and its functions
 actors can receive messages and send messages
 */
-
-// Actor ... defines a Actor type
-type Actor struct {
-	id     string      //actor id
-	recvCh chan string //receive message on this channel
-}
 
 // ActorHub ... controls message sending among actors
 type ActorHub struct {
