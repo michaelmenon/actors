@@ -1,5 +1,5 @@
-An actor package in Go. Use it for scalable message passing in a process.
-Actors are created under a tag and in return you will get an actor instance and you can call messages on this instance to send and receive messages over it.
+An actor package in Go. Use it for scalable message passing with in a process.
+Actors are created under a tag and in return you will get an actor instance and you can call methods on this instance to send and receive messages over it.
 
 Actors are assigned an internal ID and you can get it by calling actor.GetId() under the actor instance methods
 
@@ -29,4 +29,6 @@ actor2.Close()
 
 for testing the load function run :
 go test -v -run TestSendMessage
+
+TODO : Sending messages to actors over the network
 
