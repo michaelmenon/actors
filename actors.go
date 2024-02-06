@@ -1,9 +1,16 @@
 package actors
 
+const MAX_ACTORS_FOR_TAG = 100000
+
 // Actor ... defines a Actor type
+// there can be multiple actors in the system with same id but with different tag.
+// tag is assigned automatically by the system and is always previous actor's tag +1
 type Actor struct {
+	tag uint // internal tag of this actor under the same id
+	//can have multiple actors with different tag under the same id
 	id     string      //actor id
 	recvCh chan string //receive message on this channel
+	next   *Actor      //next actor with the same id but with different tag
 }
 
 // AddActor ... Global function to add an actor
