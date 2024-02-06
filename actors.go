@@ -6,15 +6,15 @@ const MAX_ACTORS_FOR_TAG = 100000
 // there can be multiple actors in the system with same id but with different tag.
 // tag is assigned automatically by the system and is always previous actor's tag +1
 type Actor struct {
-	tag uint // internal tag of this actor under the same id
+	id uint // internal id of this actor under the same id
 	//can have multiple actors with different tag under the same id
-	id     string      //actor id
+	tag    string      //actor tag under which it is stored
 	recvCh chan string //receive message on this channel
 	next   *Actor      //next actor with the same id but with different tag
 }
 
 // AddActor ... Global function to add an actor
-func NewActor(id string) (*Actor, error) {
+func NewActor(tag string) (*Actor, error) {
 	ah, err := getActorsHub()
 	if err != nil {
 		return nil, err
@@ -22,11 +22,11 @@ func NewActor(id string) (*Actor, error) {
 	actorChan := make(chan string, 1000)
 
 	actor := Actor{
-		id:     id,
+		tag:    tag,
 		recvCh: actorChan,
 	}
 	if ah.eventChan != nil {
-		ah.eventChan <- Event{iD: id, eventType: ADDACTOR, actor: &actor}
+		ah.eventChan <- Event{tag: tag, eventType: ADDACTOR, actor: &actor}
 	}
 	return &actor, nil
 }
@@ -44,7 +44,7 @@ func (a *Actor) Close() error {
 	}
 	if ah.eventChan != nil {
 
-		ah.eventChan <- Event{iD: a.id, eventType: REMOVEACTOR}
+		ah.eventChan <- Event{id: a.id, tag: a.tag, eventType: REMOVEACTOR}
 	}
 
 	return nil
@@ -56,7 +56,12 @@ func (a *Actor) Get() <-chan string {
 }
 
 // GetId ... returns the id of an actor
-func (a *Actor) GetId() string {
+func (a *Actor) GetTag() string {
+	return a.tag
+}
+
+// GetId ... returns the id of an actor
+func (a *Actor) GetId() uint {
 	return a.id
 }
 
@@ -71,7 +76,7 @@ func (a *Actor) SendMessage(to string, data []byte) error {
 	}
 	if ah.eventChan != nil {
 
-		ah.eventChan <- Event{iD: to, data: data, eventType: SENDMESSAGE}
+		ah.eventChan <- Event{tag: to, data: data, eventType: SENDMESSAGE}
 	}
 	return nil
 }

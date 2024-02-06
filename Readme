@@ -1,21 +1,25 @@
 An actor package in Go. Use it for scalable message passing in a process.
-Actors are created with an ID and in return you will get an actor instance and you can call messages on this instance to send and receive messages over it.
+Actors are created under a tag and in return you will get an actor instance and you can call messages on this instance to send and receive messages over it.
 
-Send a message to an actor by passing the ID of the actor to which you want to send the message.
+Actors are assigned an internal ID and you can get it by calling actor.GetId() under the actor instance methods
+
+Send a message to an actor by passing the tag of the actor to which you want to send the message.
+
+You can add multiple actors for the same tag to create a room of actors and broadcast message to all the actors under that room.
 
 usage: go get github.com/michaelmenon/actors
 
-actor1, err := actors.AddActor("actorID1")
+actor1, err := actors.AddActor("actortag1")
 
 //create another actor
-actor2, err := actors.AddActor("actorID2")
+actor2, err := actors.AddActor("actortag2")
 
 //listen for messages 
 for msg := <-actor1.Get(){
     fmt.Println(msg)
 }
 //in a seperate Goroutine send a message from actor1 to actor2
-actor1.SendMessage("actorID2", []byte("my message"))
+actor1.SendMessage("actortag2", []byte("my message"))
 
 //to remove an actor
 actor1.Close()
@@ -26,9 +30,3 @@ actor2.Close()
 for testing the load function run :
 go test -v -run TestSendMessage
 
-On my 32 GB MAC i was able to receive 1 million messages with 1 million actors in 5.54 seconds
-Future TODO involves:
-
-1) CLOSE signal from one actor to another actor.
-2) Multiple actors on a single tag with multiple actor IDs so that you can broad cast messages to all actors under a tag.
-3) Actor cluster and have actors send messages to each other over the network.

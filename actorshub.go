@@ -57,7 +57,7 @@ func (ah *ActorHub) run() {
 			}
 
 		case REMOVEACTOR:
-			err = ah.removeActor(ev.iD, ev.tag)
+			err = ah.removeActor(ev.tag, ev.id)
 			if err != nil {
 				log.Println(err)
 			}
@@ -68,7 +68,7 @@ func (ah *ActorHub) run() {
 				delete(ah.store, key)
 			}
 		case SENDMESSAGE:
-			err = ah.sendMessage(ev.iD, ev.data)
+			err = ah.sendMessage(ev.tag, ev.data)
 			if err != nil {
 				log.Println(err)
 			}
@@ -79,23 +79,19 @@ func (ah *ActorHub) run() {
 
 // getNodeWithTag ... gets the node given a tag and an id
 // returns the Actor and the previous actor
-func (ah *ActorHub) getNodeWithTag(tag uint, id string) (*Actor, *Actor) {
+func (ah *ActorHub) getNodeWithTag(tag string, id uint) (*Actor, *Actor) {
 	var prevNode *Actor
 	var currNode *Actor
-	if startNode, ok := ah.store[id]; ok {
+	if startNode, ok := ah.store[tag]; ok {
 		//an actor already exist
-		if startNode == nil {
-			return nil, nil
-		}
+
 		currNode = startNode
+		//check if the first node is the one we are looking for
 
-		for {
+		for currNode != nil {
 
-			if currNode.tag == tag {
+			if currNode.id == id {
 				return currNode, prevNode
-			}
-			if currNode.next == nil {
-				return nil, nil
 			}
 			//go to the next node, until we get the last node in the linked list
 			prevNode = currNode
@@ -113,15 +109,12 @@ func (ah *ActorHub) registerActor(actor *Actor) error {
 	if ah.store == nil {
 		return ActorError{err: NILSTOREERROR}
 	}
-	if oldActor, ok := ah.store[actor.id]; ok {
+	if oldActor, ok := ah.store[actor.tag]; ok {
 		//an actor already exist
 		node := oldActor
 		count := 0
-		for {
-			if node == nil {
-				break
-			}
-			//go to the next node, until we get the last node in the linked list
+		for node != nil && node.next != nil {
+
 			node = node.next
 			count += 1
 		}
@@ -131,7 +124,7 @@ func (ah *ActorHub) registerActor(actor *Actor) error {
 			//check if we have reached the max capacit of actors with the same node
 			if count < MAX_ACTORS_FOR_TAG-1 {
 				node.next = actor
-				actor.tag = node.tag + 1
+				actor.id = node.id + 1
 			} else {
 				return ActorError{err: ACTORMAXLIMITERROR}
 			}
@@ -140,15 +133,15 @@ func (ah *ActorHub) registerActor(actor *Actor) error {
 		return nil
 	} else {
 		//it is the root node
-		actor.tag = 1
-		ah.store[actor.id] = actor
+		actor.id = 1
+		ah.store[actor.tag] = actor
 	}
 	return nil
 }
 
 // RemoveActor ... remove an actor from the system
 // de register and close the actor, so actor will not get any more messages
-func (ah *ActorHub) removeActor(id string, tag uint) error {
+func (ah *ActorHub) removeActor(tag string, id uint) error {
 	if ah.store == nil {
 		return ActorError{err: NILSTOREERROR}
 	}
@@ -159,10 +152,10 @@ func (ah *ActorHub) removeActor(id string, tag uint) error {
 		}
 		//close the actor channel
 		close(actor.recvCh)
-		if actor.tag == 1 {
+		if actor.id == 1 {
 			//remove the actor from the stor
 			//it is the only node
-			delete(ah.store, id)
+			delete(ah.store, tag)
 		}
 
 	}
@@ -176,14 +169,8 @@ func (ah *ActorHub) sendMessage(to string, message []byte) error {
 	}
 	//get the actor
 	if actor, ok := ah.store[to]; ok {
-		for {
-			if actor == nil {
-				break
-			}
-			if actor != nil && actor.recvCh != nil {
-
-				actor.recvCh <- string(message)
-			}
+		for actor != nil && actor.recvCh != nil {
+			actor.recvCh <- string(message)
 			actor = actor.next
 		}
 
