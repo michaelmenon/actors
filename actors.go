@@ -8,9 +8,9 @@ const MAX_ACTORS_FOR_TAG = 100000
 type Actor struct {
 	id uint // internal id of this actor under the same id
 	//can have multiple actors with different tag under the same id
-	tag    string      //actor tag under which it is stored
-	recvCh chan string //receive message on this channel
 	next   *Actor      //next actor with the same id but with different tag
+	recvCh chan string //receive message on this channel
+	tag    string      //actor tag under which it is stored
 }
 
 // AddActor ... Global function to add an actor
