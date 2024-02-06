@@ -6,9 +6,10 @@ Actors are assigned an internal ID and you can get it by calling actor.GetId() u
 Send a message to an actor by passing the tag of the actor to which you want to send the message.
 
 You can add multiple actors for the same tag to create a room of actors and broadcast message to all the actors under that room.
-```
+
 usage: go get github.com/michaelmenon/actors
 
+```
 actor1, err := actors.AddActor("actortag1")
 
 //create another actor
@@ -24,6 +25,7 @@ actor1.SendMessage("actortag2", []byte("my message"))
 //to remove an actor
 actor1.Close()
 actor2.Close()
+
 ```
 
 
