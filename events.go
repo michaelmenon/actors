@@ -11,9 +11,9 @@ const (
 
 // /Event .. is an actor event.
 type Event struct {
+	id        uint //the id of the actor
 	eventType EVENTTYPE
-	tag       string //actor id to which the event is targeted
-	id        uint   //the tag of the actor to be removed
-	data      []byte
 	actor     *Actor //actor if needs to be added
+	data      []byte
+	tag       string //actor id to which the event is targeted
 }
