@@ -13,7 +13,7 @@ actors can receive messages and send messages
 // ActorHub ... controls message sending among actors
 type ActorHub struct {
 	store     map[string]*Actor //actor store
-	eventChan chan Event
+	eventChan chan Event        //listen for commands from the actor
 }
 
 // create a singleton isntance of the ActorHub
@@ -169,8 +169,10 @@ func (ah *ActorHub) sendMessage(to string, message []byte) error {
 	}
 	//get the actor
 	if actor, ok := ah.store[to]; ok {
-		for actor != nil && actor.recvCh != nil {
-			actor.recvCh <- string(message)
+		for actor != nil {
+			if actor.recvCh != nil {
+				actor.recvCh <- string(message)
+			}
 			actor = actor.next
 		}
 
