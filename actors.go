@@ -6,9 +6,9 @@ const MAX_ACTORS_FOR_TAG = 100000
 // there can be multiple actors in the system with same id but with different tag.
 // tag is assigned automatically by the system and is always previous actor's tag +1
 type Actor struct {
-	id uint // internal id of this actor under the same id
-	//can have multiple actors with different tag under the same id
-	next   *Actor      //next actor with the same id but with different tag
+	id uint // internal id of this actor under the same tag
+	//can have multiple actors with different id under the same tag
+	next   *Actor      //next actor with the same tag but with different id, next actor's id will have id+1
 	recvCh chan string //receive message on this channel
 	tag    string      //actor tag under which it is stored
 }

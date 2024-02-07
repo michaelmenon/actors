@@ -34,7 +34,7 @@ func getActorsHub() (*ActorHub, error) {
 			actorHub.run()
 		}()
 	})
-	if actorHub.store == nil {
+	if actorHub == nil || actorHub.store == nil {
 		return nil, ActorError{err: ACTORHUBGENERROR}
 	}
 	return actorHub, nil
