@@ -10,10 +10,14 @@ You can add multiple actors for the same tag to create a room of actors and broa
 usage: go get github.com/michaelmenon/actors
 
 ```
-actor1, err := actors.AddActor("actortag1")
+//first create a Hub instance
+ah := actors.GetActorsHub()
+
+
+actor1, err := ah.NewActor("actortag1")
 
 //create another actor
-actor2, err := actors.AddActor("actortag2")
+actor2, err := ah.NewActor("actortag2")
 
 //listen for messages 
 for msg := <-actor1.Get(){
@@ -26,11 +30,17 @@ actor1.SendMessage("actortag2", []byte("my message"))
 actor1.Close()
 actor2.Close()
 
-```
+//To clear all the actors 
+ah.Clear()
 
+
+```
 
 for testing the load function run :
 go test -v -run TestSendMessage
 
+
+
 TODO : Sending messages to actors over the network
+
 

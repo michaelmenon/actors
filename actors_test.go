@@ -7,10 +7,30 @@ import (
 	"time"
 )
 
+func TestStartHub(t *testing.T) {
+	ah, err := GetActorsHub()
+	if err != nil {
+		t.FailNow()
+	}
+	//wait for the go rotutine to start
+	time.Sleep(100 * time.Millisecond)
+	tag := "testactor"
+	act, _ := ah.NewActor(tag)
+	// Check if the result is not nil
+	if act == nil {
+		t.FailNow()
+	}
+
+}
+
 func TestActorCreation(t *testing.T) {
+	ah, err := GetActorsHub()
+	if err != nil {
+		t.FailNow()
+	}
 
 	tag := "testactor"
-	act, _ := NewActor(tag)
+	act, _ := ah.NewActor(tag)
 	// Check if the result is not nil
 	if act == nil {
 		t.FailNow()
@@ -19,18 +39,22 @@ func TestActorCreation(t *testing.T) {
 }
 func TestActorSendMessage(t *testing.T) {
 
+	ah, err := GetActorsHub()
+	if err != nil {
+		t.FailNow()
+	}
 	tag := "testactor"
-	act1, _ := NewActor(tag)
+	act1, _ := ah.NewActor(tag)
 	// Check if the result is not nil
 	if act1 == nil {
 		t.FailNow()
 	}
-	act2, _ := NewActor(tag)
+	act2, _ := ah.NewActor(tag)
 	// Check if the result is not nil
 	if act2 == nil {
 		t.FailNow()
 	}
-	err := act2.SendMessage(tag, []byte("testmessage"))
+	err = act2.SendMessage(tag, []byte("testmessage"))
 	if err != nil {
 		t.FailNow()
 	}
@@ -39,14 +63,19 @@ func TestActorSendMessage(t *testing.T) {
 
 func TestActorReceiveMessage(t *testing.T) {
 
+	ah, err := GetActorsHub()
+	if err != nil {
+		t.FailNow()
+	}
+
 	tag1 := "testactor1"
-	act1, _ := NewActor(tag1)
+	act1, _ := ah.NewActor(tag1)
 	// Check if the result is not nil
 	if act1 == nil {
 		t.FailNow()
 	}
 	tag2 := "testactor2"
-	act2, _ := NewActor(tag2)
+	act2, _ := ah.NewActor(tag2)
 	// Check if the result is not nil
 	if act2 == nil {
 		t.FailNow()
@@ -73,11 +102,17 @@ func TestActorReceiveMessage(t *testing.T) {
 }
 
 func TestBulkMessageSend(b *testing.T) {
+
+	ah, err := GetActorsHub()
+	if err != nil {
+		b.FailNow()
+	}
+
 	actors := make([]*Actor, 0, 100)
 	//Add a million actors
 	for i := 0; i < 100; i++ {
 		tag := fmt.Sprintf("%d", i)
-		act1, _ := NewActor(tag)
+		act1, _ := ah.NewActor(tag)
 		actors = append(actors, act1)
 
 	}
@@ -123,20 +158,25 @@ func TestBulkMessageSend(b *testing.T) {
 }
 func TestAddingNodesWithSameTag(t *testing.T) {
 
+	ah, err := GetActorsHub()
+	if err != nil {
+		t.FailNow()
+	}
+
 	tag1 := "testactor1"
-	act1, _ := NewActor(tag1)
+	act1, _ := ah.NewActor(tag1)
 	// Check if the result is not nil
 	if act1 == nil {
 		t.FailNow()
 	}
 
-	act2, _ := NewActor(tag1)
+	act2, _ := ah.NewActor(tag1)
 	// Check if the result is not nil
 	if act1 == nil {
 		t.FailNow()
 	}
 	tag2 := "testactor2"
-	act3, _ := NewActor(tag2)
+	act3, _ := ah.NewActor(tag2)
 	// Check if the result is not nil
 	if act2 == nil {
 		t.FailNow()
@@ -175,12 +215,17 @@ func TestAddingNodesWithSameTag(t *testing.T) {
 
 }
 func TestBroadcast(b *testing.T) {
+	ah, err := GetActorsHub()
+	if err != nil {
+		b.FailNow()
+	}
+
 	actors := make([]*Actor, 0, 100)
 	tag := "tag1"
 	//Add a million actors
 	for i := 0; i < 100000; i++ {
 
-		act1, _ := NewActor(tag)
+		act1, _ := ah.NewActor(tag)
 		actors = append(actors, act1)
 
 	}
@@ -188,7 +233,7 @@ func TestBroadcast(b *testing.T) {
 	b.Log(len(actors))
 
 	wg := &sync.WaitGroup{}
-	newactor, _ := NewActor("tag2")
+	newactor, _ := ah.NewActor("tag2")
 	t1 := time.Now()
 	for i, act := range actors {
 		var index = i
@@ -210,24 +255,29 @@ func TestBroadcast(b *testing.T) {
 
 func TestDeleteActorFromSameTag(t *testing.T) {
 
+	ah, err := GetActorsHub()
+	if err != nil {
+		t.FailNow()
+	}
+
 	actors := make([]*Actor, 0, 100)
 	tag := "tag1"
 	//Add a million actors
 	for i := 0; i < 10; i++ {
 
-		act1, _ := NewActor(tag)
+		act1, _ := ah.NewActor(tag)
 		actors = append(actors, act1)
 
 	}
 	t.Log("created all actors")
 	t.Log(len(actors))
 	//remove the 6th actor
-	err := actors[5].Close()
+	err = actors[5].Close()
 	if err != nil {
 		t.FailNow()
 	}
 	wg := &sync.WaitGroup{}
-	newactor, _ := NewActor("tag2")
+	newactor, _ := ah.NewActor("tag2")
 	t1 := time.Now()
 	for _, act := range actors {
 

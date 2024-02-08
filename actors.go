@@ -13,24 +13,6 @@ type Actor struct {
 	tag    string      //actor tag under which it is stored
 }
 
-// AddActor ... Global function to add an actor
-func NewActor(tag string) (*Actor, error) {
-	ah, err := getActorsHub()
-	if err != nil {
-		return nil, err
-	}
-	actorChan := make(chan string, 1000)
-
-	actor := Actor{
-		tag:    tag,
-		recvCh: actorChan,
-	}
-	if ah.eventChan != nil {
-		ah.eventChan <- Event{tag: tag, eventType: ADDACTOR, actor: &actor}
-	}
-	return &actor, nil
-}
-
 // Close ... remove an actor from the system
 // Close actor can only be called from an actor instance
 func (a *Actor) Close() error {
@@ -38,7 +20,7 @@ func (a *Actor) Close() error {
 	if a == nil {
 		return ActorError{err: ACTORHUBGENERROR}
 	}
-	ah, err := getActorsHub()
+	ah, err := GetActorsHub()
 	if err != nil {
 		return err
 	}
@@ -70,9 +52,13 @@ func (a *Actor) GetId() uint {
 // to : the id of the actor to which we need to send the message
 // data : which we need to send
 func (a *Actor) SendMessage(to string, data []byte) error {
-	ah, err := getActorsHub()
+	ah, err := GetActorsHub()
 	if err != nil {
 		return err
+	}
+
+	if ah.ctx.Value(STATUS) == STOPPED {
+		return ActorError{err: HUBNOTRUNNING}
 	}
 	if ah.eventChan != nil {
 
