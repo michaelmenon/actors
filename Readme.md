@@ -11,7 +11,7 @@ You can create nodes across network by creating a master node and having other n
 
 It is a fire and forget so messages are not saved or retried on network issues. There is no acknowledgement as well. This is a future work and is in pipeline
 
-usage: go get github.com/michaelmenon/actors
+usage: go get github.com/michaelmenon/actors/cmd
 
 ```
 import (
