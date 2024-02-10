@@ -1,4 +1,4 @@
-module github.com/michaelmenon/actors
+module github.com/michaelmenon/actors/cmd
 
 go 1.21.6
 
