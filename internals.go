@@ -1,5 +1,5 @@
 package actors
 
 import (
-	_ "actors/cmd"
+	_ "github.com/michaelmenon/actors/cmd"
 )
