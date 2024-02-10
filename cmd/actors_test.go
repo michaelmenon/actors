@@ -1,4 +1,4 @@
-package actors
+package cmd
 
 import (
 	"fmt"
@@ -54,7 +54,7 @@ func TestActorSendMessage(t *testing.T) {
 	if act2 == nil {
 		t.FailNow()
 	}
-	err = act2.SendMessage(tag, []byte("testmessage"))
+	err = act2.SendLocal(tag, []byte("testmessage"))
 	if err != nil {
 		t.FailNow()
 	}
@@ -83,7 +83,7 @@ func TestActorReceiveMessage(t *testing.T) {
 
 	ticker := time.NewTicker(time.Second * 15)
 	go func() {
-		err := act2.SendMessage(tag1, []byte("testmessage"))
+		err := act2.SendLocal(tag1, []byte("testmessage"))
 		if err != nil {
 			t.Log(err)
 		}
@@ -92,7 +92,7 @@ func TestActorReceiveMessage(t *testing.T) {
 	case <-ticker.C:
 		t.Log("test failed message did not arrive in 15 seconds")
 		t.FailNow()
-	case msg := <-act1.recvCh:
+	case msg := <-act1.Get():
 		t.Logf("message recieved :%s", msg)
 		if msg != "testmessage" {
 			t.FailNow()
@@ -128,12 +128,12 @@ func TestBulkMessageSend(b *testing.T) {
 			if i == 5 {
 				continue
 			}
-			err := act.SendMessage(tag, []byte(fmt.Sprintf("%d", i)))
+			err := act.SendLocal(tag, []byte(fmt.Sprintf("%d", i)))
 			if err != nil {
 				b.Log(err)
 			}
 		}
-		err := actors[0].SendMessage(tag, []byte(close))
+		err := actors[0].SendLocal(tag, []byte(close))
 		if err != nil {
 			b.Log(err)
 		}
@@ -141,7 +141,7 @@ func TestBulkMessageSend(b *testing.T) {
 	}()
 	for {
 
-		msg, ok := <-actors[5].recvCh
+		msg, ok := <-actors[5].Get()
 
 		if !ok {
 			break
@@ -184,7 +184,7 @@ func TestAddingNodesWithSameTag(t *testing.T) {
 
 	ticker := time.NewTicker(time.Second * 15)
 	go func() {
-		err := act3.SendMessage(tag1, []byte("testmessage"))
+		err := act3.SendLocal(tag1, []byte("testmessage"))
 		if err != nil {
 			t.Log(err)
 		}
@@ -198,13 +198,13 @@ func TestAddingNodesWithSameTag(t *testing.T) {
 		case <-ticker.C:
 			t.Log("test failed message did not arrive in 15 seconds")
 			t.FailNow()
-		case msg := <-act1.recvCh:
+		case msg := <-act1.Get():
 			t.Logf("message recieved for act1 :%s", msg)
 			if msg != "testmessage" {
 				t.FailNow()
 			}
 			count++
-		case msg := <-act2.recvCh:
+		case msg := <-act2.Get():
 			t.Logf("message recieved for act2 :%s", msg)
 			if msg != "testmessage" {
 				t.FailNow()
@@ -247,7 +247,7 @@ func TestBroadcast(b *testing.T) {
 		}()
 	}
 
-	newactor.SendMessage("tag1", []byte("test message to tag1"))
+	newactor.SendLocal("tag1", []byte("test message to tag1"))
 	wg.Wait()
 
 	b.Log("Total time to receive messages:", time.Since(t1).Seconds())
@@ -296,8 +296,26 @@ func TestDeleteActorFromSameTag(t *testing.T) {
 		}()
 	}
 
-	newactor.SendMessage("tag1", []byte("test message to tag1"))
+	newactor.SendLocal("tag1", []byte("test message to tag1"))
 	wg.Wait()
 
 	t.Log("Total time to receive messages:", time.Since(t1).Seconds())
+}
+
+func TestCreateCluster(t *testing.T) {
+
+	ah, err := GetActorsHub()
+	if err != nil {
+		t.FailNow()
+	}
+	cfg := ClusterConfig{
+		Host:          "127.0.0.1",
+		NodeName:      "node1",
+		Port:          8080,
+		MasterAddress: "",
+	}
+	err = ah.ConnectToCluster(cfg)
+	if err != nil {
+		t.FailNow()
+	}
 }

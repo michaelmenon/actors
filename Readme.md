@@ -7,11 +7,18 @@ Send a message to an actor by passing the tag of the actor to which you want to 
 
 You can add multiple actors for the same tag to create a room of actors and broadcast message to all the actors under that room.
 
+You can create nodes across network by creating a master node and having other nodes joing the master node. Then you can send messages under a tag within the cluster
+
+It is a fire and forget so messages are not saved or retried on network issues. There is no acknowledgement as well. This is a future work and is in pipeline
+
 usage: go get github.com/michaelmenon/actors
 
 ```
+import (
+    github.com/michaelmenon/actors/cmd
+)
 //first create a Hub instance
-ah := actors.GetActorsHub()
+ah := cmd.GetActorsHub()
 
 
 actor1, err := ah.NewActor("actortag1")
@@ -23,8 +30,8 @@ actor2, err := ah.NewActor("actortag2")
 for msg := <-actor1.Get(){
     fmt.Println(msg)
 }
-//in a seperate Goroutine send a message from actor1 to actor2
-actor1.SendMessage("actortag2", []byte("my message"))
+//in a seperate Goroutine send a message from actor1 to actor2 wiht the same node(same service)
+actor1.SendLocal("actortag2", []byte("my message"))
 
 //to remove an actor
 actor1.Close()
@@ -33,14 +40,30 @@ actor2.Close()
 //To clear all the actors 
 ah.Clear()
 
+//To creaate a cluster node
+//if this node is the master then keep the MasterAddress field empty
+//if you want this node to connect to a Master node provide the MasterAddress 
+ah.ConnectToCluster(cmd.ClusterConfig{
+		NodeName:   node,
+		Host:       host,
+		Port:       int(port),
+		MasterAddress: "localhost:8080",
+	})
 
+We take care of the node leaving and joining with Hashicorp package that implements Gossip protocol
+
+Just create the nodes, join a cluster by providing the MasterBode node name and send messgaes across the network
+
+To send message to a node in a cluster under a tag
+actor1.SendRemote("nodename","tagname",[]byte("data"))
 ```
 
 for testing the load function run :
 go test -v -run TestSendMessage
 
+TODO : 
+1) Provide reliable messaging by saving the messgaes which are not sent over the network and implement acknowledgement for received messages else retry.
 
-
-TODO : Sending messages to actors over the network
+2) Send messages to all nodes in the cluster
 
 

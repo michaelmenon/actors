@@ -1,18 +1,23 @@
-package actors
+package cmd
 
 import (
 	"context"
 	"log"
+	"log/slog"
 	"sync"
+
+	"github.com/hashicorp/memberlist"
 )
 
+const ActorsHub = "HUB"
+
 // define the HUBSTATUS wheather running or stopped
-type HUBSTATUS int
+type HubStatus int
 
 const STATUS = "hubstatus"
 
 const (
-	STOPPED HUBSTATUS = iota
+	STOPPED HubStatus = iota
 	RUNNING
 )
 
@@ -23,10 +28,11 @@ actors can receive messages and send messages
 
 // ActorHub ... controls message sending among actors
 type ActorHub struct {
-	store     map[string]*Actor //actor store
-	eventChan chan Event        //listen for commands from the actor
-	ctx       context.Context   //context to listen for start and stop
-	mu        sync.Mutex        //lock to check if the Go routine is running or not
+	store     map[string]*Actor      //actor store
+	eventChan chan Event             //listen for commands from the actor
+	ctx       context.Context        //context to listen for start and stop
+	cluster   *memberlist.Memberlist //cluster connection
+	nodeName  string                 //node name if its a part of the cluster
 }
 
 // create a singleton isntance of the ActorHub
@@ -38,6 +44,7 @@ var once sync.Once
 func init() {
 	//start the HUB while package is initialized
 	GetActorsHub()
+
 }
 
 // generate a singleton ActorHub instance
@@ -55,7 +62,7 @@ func GetActorsHub() (*ActorHub, error) {
 		}()
 	})
 	if actorHub == nil || actorHub.store == nil {
-		return nil, ActorError{err: ACTORHUBGENERROR}
+		return nil, ActorError{Err: ErrActorHubGen}
 	}
 	return actorHub, nil
 }
@@ -70,7 +77,7 @@ func (ah *ActorHub) NewActor(tag string) (*Actor, error) {
 		recvCh: actorChan,
 	}
 	if ah.eventChan != nil {
-		ah.eventChan <- Event{tag: tag, eventType: ADDACTOR, actor: &actor}
+		ah.eventChan <- Event{tag: tag, eventType: AddActor, actor: &actor}
 	}
 	return &actor, nil
 }
@@ -80,9 +87,9 @@ func (ah *ActorHub) NewActor(tag string) (*Actor, error) {
 func (ah *ActorHub) Clear() error {
 
 	if ah == nil {
-		return ActorError{err: NILSTOREERROR}
+		return ActorError{Err: ErrNilStore}
 	}
-	ah.eventChan <- Event{eventType: CLEARACTORS}
+	ah.eventChan <- Event{eventType: ClearActors}
 	return nil
 }
 
@@ -92,40 +99,40 @@ func (ah *ActorHub) run() error {
 	var err error
 	if ah == nil {
 		log.Println("cannot run actors hub")
-		return ActorError{err: NILSTOREERROR}
+		return ActorError{Err: ErrNilStore}
 	}
 	if ah.ctx.Value(STATUS) == RUNNING {
 		//already running
-		return ActorError{err: HUBALREADYRUNNING}
+		return ActorError{Err: ErrHubRunning}
 	}
 
 	ah.ctx = context.WithValue(context.Background(), STATUS, RUNNING)
 
-	log.Println("HUB Started")
+	slog.Info("HUB Started")
 	for ev := range ah.eventChan {
 		switch ev.eventType {
-		case ADDACTOR:
+		case AddActor:
 			err = ah.registerActor(ev.actor)
 			if err != nil {
-				log.Println(err)
+				slog.Error(err.Error(), "event", ev)
 			}
 
-		case REMOVEACTOR:
+		case RemoveActor:
 			err = ah.removeActor(ev.tag, ev.id)
 			if err != nil {
-				log.Println(err)
+				slog.Error(err.Error(), "event", ev)
 			}
 
-		case CLEARACTORS:
+		case ClearActors:
 			// Delete all members of the map
 			for key := range ah.store {
 				delete(ah.store, key)
 			}
 
-		case SENDMESSAGE:
+		case SendMessage:
 			err = ah.sendMessage(ev.tag, ev.data)
 			if err != nil {
-				log.Println(err)
+				slog.Error(err.Error(), "tag", ev.tag)
 			}
 
 		}
@@ -163,11 +170,11 @@ func (ah *ActorHub) getNodeWithTag(tag string, id uint) (*Actor, *Actor) {
 // / else a new actor is registered under that id
 func (ah *ActorHub) registerActor(actor *Actor) error {
 	if ah.store == nil {
-		return ActorError{err: NILSTOREERROR}
+		return ActorError{Err: ErrNilStore}
 	}
 	//check if the hub us running or not
 	if ah.ctx.Value(STATUS) == STOPPED {
-		return ActorError{err: HUBNOTRUNNING}
+		return ActorError{Err: ErrHubNotRunning}
 	}
 	if oldActor, ok := ah.store[actor.tag]; ok {
 		//an actor already exist
@@ -186,7 +193,7 @@ func (ah *ActorHub) registerActor(actor *Actor) error {
 				node.next = actor
 				actor.id = node.id + 1
 			} else {
-				return ActorError{err: ACTORMAXLIMITERROR}
+				return ActorError{Err: ErrActorMaxLimit}
 			}
 
 		}
@@ -203,11 +210,11 @@ func (ah *ActorHub) registerActor(actor *Actor) error {
 // de register and close the actor, so actor will not get any more messages
 func (ah *ActorHub) removeActor(tag string, id uint) error {
 	if ah.store == nil {
-		return ActorError{err: NILSTOREERROR}
+		return ActorError{Err: ErrNilStore}
 	}
 	//check if the hub us running or not
 	if ah.ctx.Value(STATUS) == STOPPED {
-		return ActorError{err: HUBNOTRUNNING}
+		return ActorError{Err: ErrHubNotRunning}
 	}
 	//get the actor with the tag and id
 	if actor, prevNode := ah.getNodeWithTag(tag, id); actor != nil {
@@ -229,11 +236,11 @@ func (ah *ActorHub) removeActor(tag string, id uint) error {
 // SendMessage ... send message to an actor
 func (ah *ActorHub) sendMessage(to string, message []byte) error {
 	if ah.store == nil {
-		return ActorError{err: NILSTOREERROR}
+		return ActorError{Err: ErrNilStore}
 	}
 	//check if the hub us running or not
 	if ah.ctx.Value(STATUS) == STOPPED {
-		return ActorError{err: HUBNOTRUNNING}
+		return ActorError{Err: ErrHubNotRunning}
 	}
 	//get the actor
 	if actor, ok := ah.store[to]; ok {
@@ -246,7 +253,7 @@ func (ah *ActorHub) sendMessage(to string, message []byte) error {
 
 	} else {
 
-		return ActorError{err: ACTORNOTFOUNDERROR}
+		return ActorError{Err: ErrActorNotFound}
 	}
 	return nil
 }

@@ -1,4 +1,9 @@
-package actors
+package cmd
+
+import (
+	"encoding/json"
+	"log/slog"
+)
 
 const MAX_ACTORS_FOR_TAG = 100000
 
@@ -18,7 +23,7 @@ type Actor struct {
 func (a *Actor) Close() error {
 
 	if a == nil {
-		return ActorError{err: ACTORHUBGENERROR}
+		return ActorError{Err: ErrActorHubGen}
 	}
 	ah, err := GetActorsHub()
 	if err != nil {
@@ -26,7 +31,7 @@ func (a *Actor) Close() error {
 	}
 	if ah.eventChan != nil {
 
-		ah.eventChan <- Event{id: a.id, tag: a.tag, eventType: REMOVEACTOR}
+		ah.eventChan <- Event{id: a.id, tag: a.tag, eventType: RemoveActor}
 	}
 
 	return nil
@@ -47,22 +52,54 @@ func (a *Actor) GetId() uint {
 	return a.id
 }
 
-// SendMessage ... send a message to an actor with givern id
+// SendLocal ... send a message to an actor with givern id within this node
 // provide the id of the actor to which the message needs to be sent and the data in bytes
 // to : the id of the actor to which we need to send the message
 // data : which we need to send
-func (a *Actor) SendMessage(to string, data []byte) error {
+func (a *Actor) SendLocal(to string, data []byte) error {
 	ah, err := GetActorsHub()
 	if err != nil {
 		return err
 	}
 
 	if ah.ctx.Value(STATUS) == STOPPED {
-		return ActorError{err: HUBNOTRUNNING}
+		return ActorError{Err: ErrHubNotRunning}
 	}
 	if ah.eventChan != nil {
 
-		ah.eventChan <- Event{tag: to, data: data, eventType: SENDMESSAGE}
+		ah.eventChan <- Event{tag: to, data: data, eventType: SendMessage}
 	}
+	return nil
+}
+
+func (a *Actor) SendRemote(nodeName string, to string, data []byte) error {
+	ah, err := GetActorsHub()
+	if err != nil {
+		return err
+	}
+
+	if ah.ctx.Value(STATUS) == STOPPED {
+		return ActorError{Err: ErrHubNotRunning}
+	}
+	if ah.cluster == nil {
+		return ActorError{Err: NoClusterConnection}
+	}
+	for _, member := range ah.cluster.Members() {
+		if member.Name == nodeName {
+			//got the node, now send the message
+			clusterMsg := ClusterMessage{
+				ActorTag: to,
+				Msg:      data,
+			}
+			b, err := json.Marshal(&clusterMsg)
+			if err != nil {
+				slog.Error(err.Error())
+				return ActorError{Err: ClusterMessageError}
+			}
+			ah.cluster.SendReliable(member, b)
+			break
+		}
+	}
+
 	return nil
 }
