@@ -38,4 +38,4 @@ ah.Clear()
 
 
 for testing the load function run :
-go test -v -run TestSendMessage
+go test -v -run TestBroadcast
