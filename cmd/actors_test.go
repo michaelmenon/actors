@@ -301,21 +301,3 @@ func TestDeleteActorFromSameTag(t *testing.T) {
 
 	t.Log("Total time to receive messages:", time.Since(t1).Seconds())
 }
-
-func TestCreateCluster(t *testing.T) {
-
-	ah, err := GetActorsHub()
-	if err != nil {
-		t.FailNow()
-	}
-	cfg := ClusterConfig{
-		Host:          "127.0.0.1",
-		NodeName:      "node1",
-		Port:          8080,
-		MasterAddress: "",
-	}
-	err = ah.ConnectToCluster(cfg)
-	if err != nil {
-		t.FailNow()
-	}
-}

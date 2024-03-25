@@ -5,8 +5,6 @@ import (
 	"log"
 	"log/slog"
 	"sync"
-
-	"github.com/hashicorp/memberlist"
 )
 
 const ActorsHub = "HUB"
@@ -28,11 +26,10 @@ actors can receive messages and send messages
 
 // ActorHub ... controls message sending among actors
 type ActorHub struct {
-	store     map[string]*Actor      //actor store
-	eventChan chan Event             //listen for commands from the actor
-	ctx       context.Context        //context to listen for start and stop
-	cluster   *memberlist.Memberlist //cluster connection
-	nodeName  string                 //node name if its a part of the cluster
+	store     map[string]*Actor //actor store
+	eventChan chan Event        //listen for commands from the actor
+	ctx       context.Context   //context to listen for start and stop
+	nodeName  string            //node name if its a part of the cluster
 }
 
 // create a singleton isntance of the ActorHub

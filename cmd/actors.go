@@ -1,10 +1,5 @@
 package cmd
 
-import (
-	"encoding/json"
-	"log/slog"
-)
-
 const MAX_ACTORS_FOR_TAG = 100000
 
 // Actor ... defines a Actor type
@@ -69,37 +64,5 @@ func (a *Actor) SendLocal(to string, data []byte) error {
 
 		ah.eventChan <- Event{tag: to, data: data, eventType: SendMessage}
 	}
-	return nil
-}
-
-func (a *Actor) SendRemote(nodeName string, to string, data []byte) error {
-	ah, err := GetActorsHub()
-	if err != nil {
-		return err
-	}
-
-	if ah.ctx.Value(STATUS) == STOPPED {
-		return ActorError{Err: ErrHubNotRunning}
-	}
-	if ah.cluster == nil {
-		return ActorError{Err: NoClusterConnection}
-	}
-	for _, member := range ah.cluster.Members() {
-		if member.Name == nodeName {
-			//got the node, now send the message
-			clusterMsg := ClusterMessage{
-				ActorTag: to,
-				Msg:      data,
-			}
-			b, err := json.Marshal(&clusterMsg)
-			if err != nil {
-				slog.Error(err.Error())
-				return ActorError{Err: ClusterMessageError}
-			}
-			ah.cluster.SendReliable(member, b)
-			break
-		}
-	}
-
 	return nil
 }
